@@ -1,0 +1,12 @@
+requests
+fastapi
+uvicorn
+python-multipart
+# FileResponse依赖
+aiofiles
+loguru
+sqlalchemy
+# mysql驱动
+pymysql
+# redis驱动
+aioredis
