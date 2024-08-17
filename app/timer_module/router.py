@@ -77,6 +77,7 @@ def distance_calculate_core():
             fastest_way = result["route"]["paths"][0]["cost"]
             row = (
                 {
+                    "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "origin": task.origin_name,
                     "destination": task.destination_name,
                     "distance": distance,
