@@ -8,8 +8,8 @@ services:
     ports:
       - "8100:8000"
     volumes:
-      - /data:/app/csv
-      - /logs:/app/logs
+      - ./data:/app/csv
+      - ./logs:/app/logs
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 5m
