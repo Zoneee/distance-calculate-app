@@ -1,0 +1,18 @@
+version: '3'
+services:
+  fastapi-distances-calculator:
+    image: fastapi-distances-calculator:${TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8100:8000"
+    volumes:
+      - /data:/app/csv
+      - /logs:/app/logs
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 5m
+      timeout: 30s
+      retries: 5
+      start_period: 30s

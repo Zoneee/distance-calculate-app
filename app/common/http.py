@@ -10,6 +10,11 @@ from traceback import format_exc
 from settings import REQUEST_ID_KEY
 from exceptions import InternalException, status
 from common.logger import logger, TraceID
+from urllib3.exceptions import InsecureRequestWarning
+from urllib3 import disable_warnings
+
+# Disable all SSL warnings
+disable_warnings(InsecureRequestWarning)
 
 
 def post(*args, retry: int = 2, **kwargs) -> requests.Response:
@@ -34,37 +39,51 @@ def get(*args, retry: int = 2, **kwargs) -> requests.Response:
 
 def _do_req(method, *args, retry: int = 2, **kwargs):
     # 设置用于全链路追踪的ID
-    if "headers" in kwargs:    # 存在头信息
+    if "headers" in kwargs:  # 存在头信息
         if REQUEST_ID_KEY not in kwargs["headers"]:
-            kwargs['headers'][REQUEST_ID_KEY] = TraceID.get_trace_id()
+            kwargs["headers"][REQUEST_ID_KEY] = TraceID.get_trace_id()
     else:
-        kwargs['headers'] = {
+        kwargs["headers"] = {
             REQUEST_ID_KEY: TraceID.get_trace_id(),
         }
 
     while retry >= 0:
         retry -= 1
         try:
-            resp: requests.Response = method(*args, **kwargs)
+            resp: requests.Response = method(*args, **kwargs, verify=False)
             break
-        except requests.exceptions.Timeout as e:    # 超时异常需要进行重试
+        except requests.exceptions.Timeout as e:  # 超时异常需要进行重试
             if retry < 0:
-                logger.error(f"{method.__name__}超时异常 : {args} : retry = {retry} : {e}")
-                raise InternalException(status.HTTP_504_GATEWAY_TIMEOUT, message=f"{method.__name__}上游服务请求超时: {args}", detail=e)
-            logger.warning(f"{method.__name__}超时异常 : {args} : retry = {retry} : {e}")
+                logger.error(
+                    f"{method.__name__}超时异常 : {args} : retry = {retry} : {e}"
+                )
+                raise InternalException(
+                    status.HTTP_504_GATEWAY_TIMEOUT,
+                    message=f"{method.__name__}上游服务请求超时: {args}",
+                    detail=e,
+                )
+            logger.warning(
+                f"{method.__name__}超时异常 : {args} : retry = {retry} : {e}"
+            )
             continue
         except Exception as e:
             msg = str(e)
-            logger.error(f"{method.__name__}请求异常 : {args} : retry = {retry} : {msg}\n{format_exc()}")
+            logger.error(
+                f"{method.__name__}请求异常 : {args} : retry = {retry} : {msg}\n{format_exc()}"
+            )
             oom_err = _check_oom(msg, method.__name__, *args)
-            if oom_err:   # 超内存或显存异常
+            if oom_err:  # 超内存或显存异常
                 raise oom_err
             # 其他的异常
-            raise InternalException(status.HTTP_500_INTERNAL_SERVER_ERROR, message=f"{method.__name__}上游服务请求异常: {args}", detail=msg)
+            raise InternalException(
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=f"{method.__name__}上游服务请求异常: {args}",
+                detail=msg,
+            )
 
     if resp.status_code != 200:
         oom_err = _check_oom(resp.text, method.__name__, *args)
-        if oom_err:   # 超内存或显存异常
+        if oom_err:  # 超内存或显存异常
             logger.error(f"{oom_err}: {resp.text}")
             raise oom_err
         # 其他的异常
@@ -92,7 +111,7 @@ def _check_oom(msg: str, *args):
         msg (str): 通常是异常信息字符串
         *args: 需要记录到异常信息的参数
     """
-    if 'Outofmemory' in msg or 'Out of memory' in msg:
+    if "Outofmemory" in msg or "Out of memory" in msg:
         if "GPU" in msg:
             err_msg = f"上游服务请求时, GPU超出显存导致错误: {args}"
         else:

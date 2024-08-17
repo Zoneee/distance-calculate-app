@@ -10,3 +10,5 @@ sqlalchemy
 pymysql
 # redis驱动
 aioredis
+schedule
+urllib3
