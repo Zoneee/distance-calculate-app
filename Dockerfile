@@ -33,16 +33,9 @@ ENV PYTHONIOENCODING utf-8
 ENV TZ "Asia/Shanghai"
 
 
-WORKDIR /app
-COPY . /app
-# Check if settings.py exists and throw an error if it does
-RUN !(test -f /app/settings.py) || (echo "settings.py file not found!" && exit 1)
-# # Check if settings.py exists and throw an error if it does
-# RUN if test -f /app/settings.py; then \
-#         echo "settings.py file should not exist!" && exit 1; \
-#     else \
-#         echo "settings.py file does not exist, continuing..."; \
-#     fi
-
 EXPOSE 8000
-ENTRYPOINT [ "uvicorn", "main:app", "--host", "8000" ]
+WORKDIR /app
+COPY /app /app
+# Check if settings.py exists and throw an error if it does
+RUN (test -f /app/settings.py) || (echo "settings.py file not found!" && exit 1)
+ENTRYPOINT [ "uvicorn", "main:app", "--host","0.0.0.0", "--port", "8000" ]
