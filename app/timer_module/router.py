@@ -66,9 +66,8 @@ def distance_calculate_core():
     morning_time_range = range(7, 9)
     afternoon_time_range = range(17, 19)
     now_hour = datetime.datetime.now().hour
-    if task_enabled and (
-        now_hour in morning_time_range or now_hour in afternoon_time_range
-    ):
+
+    if task_enabled and now_hour in morning_time_range:
         for task in disable_calculate_list:
             args = {"origin": task.origin, "destination": task.destination}
 
@@ -80,6 +79,36 @@ def distance_calculate_core():
                     "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "origin": task.origin_name,
                     "destination": task.destination_name,
+                    "distance": distance,
+                }
+                | fastest_way
+                | {"distance_unit": "m", "time_unit": "s"}
+            )
+
+            # 创建csv目录
+            if not os.path.exists("./csv"):
+                os.makedirs("./csv")
+            current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            with open(
+                f"./csv/{current_date}.csv", "a", newline="", encoding="utf8"
+            ) as f:
+                writer = csv.DictWriter(f, fieldnames=row.keys())
+                if f.tell() == 0:
+                    writer.writeheader()
+                writer.writerow(row)
+
+    if task_enabled and now_hour in afternoon_time_range:
+        for task in disable_calculate_list:
+            args = {"origin": task.destination, "destination": task.origin}
+
+            result = amap_distance_calculate(args)
+            distance = result["route"]["paths"][0]["distance"]
+            fastest_way = result["route"]["paths"][0]["cost"]
+            row = (
+                {
+                    "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "origin": task.destination_name,
+                    "destination": task.origin_name,
                     "distance": distance,
                 }
                 | fastest_way
