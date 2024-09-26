@@ -1,7 +1,7 @@
 version: '3'
 services:
   fastapi-distances-calculator:
-    image: ${HUB_REPOSITORY}/fastapi-distances-calculator:${TAG}
+    image: ${HUB_REPOSITORY}/fastapi-distances-calculator:${IMAGE_TAG}
     build:
       context: .
       dockerfile: Dockerfile

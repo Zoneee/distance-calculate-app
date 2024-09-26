@@ -22,6 +22,7 @@ import os
 
 task_enabled = False
 disable_calculate_list = []
+time_rounds = [5, 15, 25, 35, 45, 55]
 
 router = APIRouter(
     # dependencies=[Depends(get_token_header)],
@@ -63,7 +64,7 @@ async def disable_calculate():
 
 def distance_calculate_core():
     global task_enabled, disable_calculate_list
-    morning_time_range = range(7, 9)
+    morning_time_range = range(8, 10)
     afternoon_time_range = range(17, 19)
     now_hour = datetime.datetime.now().hour
 
@@ -132,6 +133,11 @@ def run_scheduler():
     while True:
         schedule.run_pending()
         time.sleep(60)
+
+
+def format_time(arg: datetime):
+    # 使用正则匹配时间 (\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})
+    pass
 
 
 # Start the scheduler in a separate thread
